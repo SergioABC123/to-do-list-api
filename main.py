@@ -18,7 +18,7 @@ def list_tasks():
     return tasks
 
 
-@app.post("/tasks", status_code=200) # FastAPI valida el JSON de la petición con Task
+@app.post("/tasks", status_code=201) # FastAPI valida el JSON de la petición con Task
 def create_task(task: Task):
     tasks.append(task) # la añadimos a la lista
     return task
