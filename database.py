@@ -3,6 +3,7 @@ import os
 
 import boto3
 import psycopg
+from psycopg.rows import dict_row
 
 
 def connect():
