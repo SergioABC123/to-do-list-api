@@ -17,3 +17,9 @@ variable "repository_url" {
   description = "URL HTTPS del repositorio de GitHub que contiene la API."
   type        = string
 }
+
+variable "alert_email" {
+  description = "Correo que recibirá las alarmas de CloudWatch."
+  type        = string
+  sensitive   = true
+}
