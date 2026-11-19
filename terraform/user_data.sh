@@ -19,6 +19,10 @@ After=network-online.target
 [Service]
 User=ec2-user
 WorkingDirectory=/opt/todo-list-api
+Environment=AWS_DEFAULT_REGION=${aws_region}
+Environment=DB_HOST=${database_host}
+Environment=DB_NAME=${database_name}
+Environment=DB_SECRET_ARN=${database_secret_arn}
 ExecStart=/opt/todo-list-api/.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
 

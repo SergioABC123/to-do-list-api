@@ -68,8 +68,14 @@ resource "aws_instance" "api" {
     Name = "todo-list-api"
   }
 
+  iam_instance_profile = "LabInstanceProfile"
+
   user_data = templatefile("${path.module}/user_data.sh", {
-    repository_url = var.repository_url
+    repository_url      = var.repository_url
+    aws_region          = var.aws_region
+    database_host       = aws_db_instance.tasks.address
+    database_name       = aws_db_instance.tasks.db_name
+    database_secret_arn = aws_db_instance.tasks.master_user_secret[0].secret_arn
   })
   user_data_replace_on_change = true
 }

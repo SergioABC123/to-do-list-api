@@ -1,29 +1,57 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
 import os
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+from datetime import UTC, datetime
+
+from botocore.exceptions import BotoCoreError, ClientError
+from fastapi import FastAPI, Response
+from psycopg import Error as PostgresError
+
+from pydantic import BaseModel
+
+import database
 
 
-class Task(BaseModel): # define los datos que recibirá la api cuando se crea una tarea
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    database.initialize()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+class Task(BaseModel):
     title: str
-    done: bool = False # falso por predeterminado si no le pones nada
+    done: bool = False  # Si se omite, la tarea empieza como pendiente.
 
 
-tasks: list[Task] = [] # las tareas se guardan en memoria y se pierden al reiniciar el servidor
-
-
-@app.get("/tasks") # Primera ruta que usamos con el FastAPI para obtener las tareas
+@app.get("/tasks")
 def list_tasks():
-    return tasks
+    return database.list_tasks()
 
 
-@app.post("/tasks", status_code=201) # FastAPI valida el JSON de la petición con Task
+@app.post("/tasks", status_code=201)
 def create_task(task: Task):
-    tasks.append(task) # la añadimos a la lista
+    database.create_task(task.title, task.done)
     return task
+
 
 @app.get("/version")
 def get_version():
-    # en cada despliegue, APP_VERSION tendrá la etiqueta del release
     return {"version": os.getenv("APP_VERSION", "dev")}
+
+@app.get("/health")
+def health(response: Response):
+    try:
+        database.check_connection()
+        database_status = "ok"
+    except (PostgresError, BotoCoreError, ClientError):
+        response.status_code = 503
+        database_status = "unavailable"
+
+    return {
+        "database": database_status,
+        "version": get_version()["version"],
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
