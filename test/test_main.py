@@ -13,6 +13,7 @@ def client(monkeypatch):
     monkeypatch.setattr(main.database, "initialize", lambda: None)
     monkeypatch.setattr(main.database, "list_tasks", lambda: tasks)
     monkeypatch.setattr(main.database, "create_task", save_task)
+    monkeypatch.setattr(main.metrics, "record_task_read_latency", lambda _: None)
 
     with TestClient(main.app) as test_client:
         yield test_client
