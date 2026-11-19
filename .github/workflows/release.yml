@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validar la etiqueta y comprimir el código
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "La etiqueta debe tener el formato v1.0.0."
+            exit 1
+          fi
+
+          git archive --format=zip \
+            --output="to-do-list-api-${GITHUB_REF_NAME}.zip" \
+            HEAD
+
+      - name: Publicar el release en GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "to-do-list-api-${GITHUB_REF_NAME}.zip" \
+            --verify-tag \
+            --generate-notes
+
+  deploy:
+    needs: publish
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit

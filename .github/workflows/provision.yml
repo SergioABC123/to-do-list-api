@@ -1,0 +1,44 @@
+name: Provision AWS
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: todo-list-api-terraform
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
+      TF_VAR_aws_region: us-east-1
+      TF_VAR_ec2_public_key: ${{ vars.EC2_PUBLIC_KEY }}
+      TF_VAR_api_ingress_cidr: ${{ vars.API_INGRESS_CIDR }}
+      TF_VAR_repository_url: ${{ github.server_url }}/${{ github.repository }}.git
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Inicializar Terraform
+        run: terraform init -input=false
+
+      - name: Aprovisionar infraestructura
+        run: terraform apply -input=false -auto-approve
